@@ -14,7 +14,9 @@
     "@tauri-apps/plugin-http": "~2.8.2",
     "@tauri-apps/plugin-opener": "~2.7.1",
     "@tauri-apps/plugin-window-state": "~2.5.0",
-    "vue": "^3.5.44"
+    "pinia": "^3.0.1",
+    "vue": "^3.5.44",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
