@@ -28,7 +28,9 @@
     "shortDescription": "飞牛音乐",
     "publisher": "foolin",
     "targets": "all",
-    "macOS": {},
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    },
     "windows": {},
     "linux": {},
     "icon": [

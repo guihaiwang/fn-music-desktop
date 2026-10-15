@@ -9,7 +9,6 @@
     "main"
   ],
   "permissions": [
-    "window-state:default",
-    "media:default"
+    "window-state:default"
   ]
 }
