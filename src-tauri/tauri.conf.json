@@ -24,7 +24,7 @@
       "csp": null
     },
     "trayIcon": {
-      "iconPath": "icons/icon.png",
+      "iconPath": "icons/icon.ico",
       "title": "飞牛音乐",
       "tooltip": "飞牛音乐"
     }
