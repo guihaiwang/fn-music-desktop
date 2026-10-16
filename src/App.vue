@@ -33,9 +33,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="titlebar" v-if="currentPlatform == 'windows'">
+  <div class="titlebar" v-if="$route.name">
     <div data-tauri-drag-region></div>
-    <div class="controls">
+    <div class="controls" v-if="currentPlatform == 'windows'">
       <button ref="titlebar-minimize" title="最小化">
         <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
           <path d="M 3 8 H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" />

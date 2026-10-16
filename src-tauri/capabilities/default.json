@@ -27,7 +27,6 @@
     "core:window:allow-maximize",
     "core:window:allow-hide",
     "core:window:allow-show",
-    "os:default",
-    "snap-layout:default"
+    "os:default"
   ]
 }

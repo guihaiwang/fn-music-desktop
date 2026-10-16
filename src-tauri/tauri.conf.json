@@ -10,16 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [
-      {
-        "label": "main",
-        "title": "飞牛音乐",
-        "minWidth": 860,
-        "minHeight": 580,
-        "width": 1080.0,
-        "height": 700.0
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": null
     }
@@ -32,12 +23,14 @@
     "publisher": "foolin",
     "targets": "all",
     "macOS": {
+      "bundleName": "飞牛音乐",
       "minimumSystemVersion": "12.0"
     },
     "windows": {},
     "linux": {},
     "icon": [
       "icons/32x32.png",
+      "icons/64x64.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
