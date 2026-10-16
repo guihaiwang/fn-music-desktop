@@ -68,9 +68,10 @@ pub fn run() {
 
             let _tray = TrayIconBuilder::new()
                 .menu(&menu)
+                .icon("icons/icon.ico")
                 .show_menu_on_left_click(true)
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "quit" => {
+                    "退出" => {
                         app.exit(0);
                     }
                     _ => {}

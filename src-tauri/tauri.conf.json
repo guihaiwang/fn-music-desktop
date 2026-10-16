@@ -22,11 +22,6 @@
     ],
     "security": {
       "csp": null
-    },
-    "trayIcon": {
-      "iconPath": "icons/icon.ico",
-      "title": "飞牛音乐",
-      "tooltip": "飞牛音乐"
     }
   },
   "bundle": {
