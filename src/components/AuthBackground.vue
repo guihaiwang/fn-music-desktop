@@ -255,8 +255,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* 三层结构与 canvas 样式全部由原版 CSS 提供：
-   .auth-background / __webgl / __grain / __vignette / __canvas（assets/original/02-main.css） */
 .auth-background {
   z-index: 0;
   pointer-events: none;
@@ -287,16 +285,16 @@ onUnmounted(() => {
 
 .auth-background__vignette {
   z-index: 2;
-  background: radial-gradient(ellipse var(--auth-shader-vignette-x) var(--auth-shader-vignette-y) at left bottom, transparent 0%, transparent 38%, #0f0f0f6b 66%, #0f0f0fd1 86%, var(--ds-bg-primary) 100%), linear-gradient(180deg, transparent 0%, transparent 42%, #0f0f0f29 100%), radial-gradient(circle at center, transparent 0%, #0f0f0f14 100%)
+  background: radial-gradient(ellipse var(--auth-shader-vignette-x) var(--auth-shader-vignette-y) at left bottom, transparent 0%, transparent 38%, #0f0f0f6b 66%, #0f0f0fd1 86%, #0f0f0f 100%), linear-gradient(180deg, transparent 0%, transparent 42%, #0f0f0f29 100%), radial-gradient(circle at center, transparent 0%, #0f0f0f14 100%)
 }
 
 @supports (color:color-mix(in srgb, black 50%, white)) {
   .auth-background__vignette {
-    background: radial-gradient(ellipse var(--auth-shader-vignette-x) var(--auth-shader-vignette-y) at left bottom, transparent 0%, transparent 38%, color-mix(in srgb, var(--ds-bg-primary) 42%, transparent) 66%, color-mix(in srgb, var(--ds-bg-primary) 82%, transparent) 86%, var(--ds-bg-primary) 100%), linear-gradient(180deg, transparent 0%, transparent 42%, color-mix(in srgb, var(--ds-bg-primary) 16%, transparent) 100%), radial-gradient(circle at center, transparent 0%, color-mix(in srgb, var(--ds-bg-primary) 8%, transparent) 100%)
+    background: radial-gradient(ellipse var(--auth-shader-vignette-x) var(--auth-shader-vignette-y) at left bottom, transparent 0%, transparent 38%, color-mix(in srgb, #0f0f0f 42%, transparent) 66%, color-mix(in srgb, #0f0f0f 82%, transparent) 86%, #0f0f0f 100%), linear-gradient(180deg, transparent 0%, transparent 42%, color-mix(in srgb, #0f0f0f 16%, transparent) 100%), radial-gradient(circle at center, transparent 0%, color-mix(in srgb, #0f0f0f 8%, transparent) 100%)
   }
 }
 
 .auth-background[data-safari=true] .auth-background__vignette {
-  background: linear-gradient(90deg, transparent 0%, transparent 36%, color-mix(in srgb, var(--ds-bg-primary) 18%, transparent) 58%, color-mix(in srgb, var(--ds-bg-primary) 72%, transparent) 82%, var(--ds-bg-primary) 100%), linear-gradient(180deg, color-mix(in srgb, var(--ds-bg-primary) 92%, transparent) 0%, color-mix(in srgb, var(--ds-bg-primary) 74%, transparent) 34%, color-mix(in srgb, var(--ds-bg-primary) 18%, transparent) 70%, transparent 100%)
+  background: linear-gradient(90deg, transparent 0%, transparent 36%, color-mix(in srgb, #0f0f0f 18%, transparent) 58%, color-mix(in srgb, #0f0f0f 72%, transparent) 82%, #0f0f0f 100%), linear-gradient(180deg, color-mix(in srgb, #0f0f0f 92%, transparent) 0%, color-mix(in srgb, #0f0f0f 74%, transparent) 34%, color-mix(in srgb, #0f0f0f 18%, transparent) 70%, transparent 100%)
 }
 </style>
