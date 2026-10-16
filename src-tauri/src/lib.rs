@@ -1,84 +1,22 @@
-use tauri::{Emitter, Manager, WebviewUrl};
+use tauri::{
+    Manager, WebviewUrl, WebviewWindowBuilder,
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+};
 
-/// SSO 登录窗口标签
-const SSO_WINDOW_LABEL: &str = "sso-login";
-
-/// 打开飞牛 NAS SSO 登录窗口。
-///
-/// 加载 fnOS `/signin` 授权页；登录成功后 fnOS 会重定向到
-/// `{origin}/music/oauth/result?code=xxx`，通过 on_navigation
-/// 拦截该跳转，提取 code 并以 `sso:code` 事件发给主窗口。
-#[tauri::command]
-fn open_sso_login(app: tauri::AppHandle, url: String) -> Result<(), String> {
-    // 已有 SSO 窗口时聚焦复用
-    if let Some(existing) = app.get_webview_window(SSO_WINDOW_LABEL) {
-        let _ = existing.set_focus();
-        return Ok(());
-    }
-
-    let parsed: tauri::Url = url
-        .parse()
-        .map_err(|e| format!("SSO 地址无效: {e}"))?;
-
-    let handle = app.clone();
-    // SSO 弹窗作为主窗口的子窗口（owned window），始终保持在主窗口之上
-    let main_window = app
-        .get_webview_window("main")
-        .ok_or_else(|| "主窗口不存在".to_string())?;
-    let window = tauri::WebviewWindowBuilder::new(
-        &app,
-        SSO_WINDOW_LABEL,
-        WebviewUrl::External(parsed),
-    )
-    .parent(&main_window)
-    .map_err(|e| format!("设置父窗口失败: {e}"))?
-    .title("使用 NAS 账号登录")
-    .inner_size(480.0, 660.0)
-    .min_inner_size(400.0, 520.0)
-    .center()
-    .resizable(true)
-    .on_navigation(move |nav| {
-        if nav.path().contains("/oauth/result") {
-            let code = nav
-                .query_pairs()
-                .find(|(k, _)| k == "code")
-                .map(|(_, v)| v.into_owned());
-            if let Some(code) = code {
-                let _ = handle.emit("sso:code", code);
-            }
-            // 登录完成，关闭 SSO 窗口并阻止加载 result 页
-            if let Some(window) = handle.get_webview_window(SSO_WINDOW_LABEL) {
-                let _ = window.close();
-            }
-            return false;
-        }
-        true
-    })
-    .build()
-    .map_err(|e| format!("打开 SSO 登录窗口失败: {e}"))?;
-
-    // 窗口销毁（含用户手动关闭）时通知主窗口取消等待态
-    let closed_handle = app.clone();
-    window.on_window_event(move |event| {
-        if matches!(event, tauri::WindowEvent::Destroyed) {
-            let _ = closed_handle.emit("sso:closed", ());
-        }
-    });
-
-    Ok(())
-}
-
-/// 关闭 SSO 登录窗口（用户取消时调用）
-#[tauri::command]
-fn close_sso_login(app: tauri::AppHandle) {
-    if let Some(window) = app.get_webview_window(SSO_WINDOW_LABEL) {
-        let _ = window.close();
-    }
+pub mod sso {
+    pub mod sso_win;
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_os::init())
+        .plugin(
+            tauri_plugin_snap_layout::init()
+                .button_id("snap-btn")
+                .build(),
+        )
         // .plugin(tauri_plugin_media::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
@@ -89,7 +27,76 @@ pub fn run() {
                 .set_focus();
         }))
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![open_sso_login, close_sso_login])
+        .setup(|app| {
+            // // 构建主窗口
+            // let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+            //     .title("飞牛音乐")
+            //     .disable_drag_drop_handler()
+            //     .center()
+            //     .min_inner_size(500.0, 300.0)
+            //     .inner_size(500.0, 300.0);
+            // #[cfg(target_os = "windows")]
+            // let win_builder = win_builder.decorations(false);
+            #[cfg(target_os = "macos")]
+            {
+                // let win_builder = win_builder
+                //     .hidden_title(true)
+                //     .title_bar_style(tauri::TitleBarStyle::Overlay);
+                let about_str = format!("关于{}", app.package_info().name);
+                let quit = tauri::menu::PredefinedMenuItem::quit(app, Some("退出"))?;
+                let about = tauri::menu::PredefinedMenuItem::about(app, Some(&about_str), None)?;
+                let menu =
+                    tauri::menu::Submenu::with_items(app, "飞牛音乐", true, &[&about, &quit])?;
+                let menus = tauri::menu::MenuBuilder::new(app).items(&[&menu]).build()?;
+                app.set_menu(menus)?;
+            }
+            // let main_window = win_builder.build()?;
+            // let _ = main_window.set_size(LogicalSize::new(1024.0, 768.0))?;
+
+            let Some(main_window) = app.get_webview_window("main") else {
+                return Err("没有主窗口".into());
+            };
+            let _ = main_window.set_decorations(false);
+
+            #[cfg(debug_assertions)] // 仅在调试构建时包含此代码
+            {
+                main_window.open_devtools();
+            }
+
+            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&quit_i])?;
+
+            let _tray = TrayIconBuilder::new()
+                .menu(&menu)
+                .show_menu_on_left_click(true)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| match event {
+                    TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } => {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.unminimize();
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    _ => {}
+                })
+                .build(app)?;
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            sso::sso_win::open_sso_login,
+            sso::sso_win::close_sso_login
+        ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("运行tauri应用失败");
 }

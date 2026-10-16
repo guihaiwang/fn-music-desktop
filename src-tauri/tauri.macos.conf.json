@@ -1,0 +1,17 @@
+{
+    "app": {
+        "windows": [
+            {
+                "hiddenTitle": true,
+                "decorations": false,
+                "titleBarStyle": "Overlay",
+                "visible": false
+            }
+        ]
+    },
+    "bundle": {
+        "macOS": {
+            "minimumSystemVersion": "12.0"
+        }
+    }
+}

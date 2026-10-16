@@ -6,6 +6,7 @@ import { useRouter } from "vue-router"
 import { useAuthStore } from "../stores/auth"
 import { authLogin, buildNasOauthUrl, getSysConfig, passwordLogin } from "../api/auth"
 import { getDeviceId } from "../utils/device"
+import { message } from "../components/message/message"
 import AuthBackground from "../components/AuthBackground.vue"
 import appIconUrl from "../assets/logo.png"
 import introDiscUrl from "../assets/intro-disc.png"
@@ -94,7 +95,6 @@ const showPassword = ref(false)
 
 const submitting = ref(false)
 const ssoWaiting = ref(false)
-const errorMsg = ref("")
 const showForgot = ref(false)
 
 let unlistenSso: UnlistenFn | null = null
@@ -109,7 +109,7 @@ function ensureServer(): boolean {
     auth.setServer(normalized)
     return true
   } catch {
-    errorMsg.value = "服务器地址无效，请检查（例如 http://192.168.1.125:5666）"
+    message.error("服务器地址无效，请检查（例如 http://192.168.1.125:5666）")
     return false
   }
 }
@@ -119,7 +119,7 @@ async function checkServer() {
   try {
     await getSysConfig()
   } catch (e) {
-    errorMsg.value = e instanceof Error ? e.message : String(e)
+    message.error(e instanceof Error ? e.message : String(e))
   }
 }
 
@@ -128,18 +128,17 @@ async function submitPasswordLogin() {
   if (submitting.value) return
   if (!ensureServer()) return
   if (!username.value.trim() || !password.value) {
-    errorMsg.value = "请输入用户名和密码"
+    message.warning("请输入用户名和密码")
     return
   }
   submitting.value = true
-  errorMsg.value = ""
   try {
     const result = await passwordLogin(username.value.trim(), password.value, getDeviceId())
     if (rememberMe.value) localStorage.setItem("fnm.username", username.value.trim())
     auth.setSession(result.userToken, result.user)
     router.replace({ name: "home" })
   } catch (e) {
-    errorMsg.value = e instanceof Error ? e.message : String(e)
+    message.error(e instanceof Error ? e.message : String(e))
   } finally {
     submitting.value = false
   }
@@ -149,19 +148,17 @@ async function submitPasswordLogin() {
 async function startNasLogin() {
   if (ssoWaiting.value) return
   if (!ensureServer()) return
-  errorMsg.value = ""
   try {
     const url = await buildNasOauthUrl()
     await invoke("open_sso_login", { url })
     ssoWaiting.value = true
   } catch (e) {
-    errorMsg.value = e instanceof Error ? e.message : String(e)
+    message.error(e instanceof Error ? e.message : String(e))
   }
 }
 
 function cancelNasLogin() {
   ssoWaiting.value = false
-  errorMsg.value = ""
   void invoke("close_sso_login").catch(() => { })
 }
 
@@ -176,7 +173,7 @@ async function handleSsoCode(code: string) {
     auth.setSession(result.userToken, result.user)
     router.replace({ name: "home" })
   } catch (e) {
-    errorMsg.value = e instanceof Error ? e.message : String(e)
+    message.error(e instanceof Error ? e.message : String(e))
   }
 }
 
@@ -258,7 +255,7 @@ onUnmounted(() => {
     <div class="auth-layout">
       <div class="auth-wrapper">
         <main class="auth-panel auth-reveal" data-reveal-order="4">
-          <div class="auth-flow-card flex flex-col gap-10">
+          <div class="auth-flow-card flex flex-col gap-6">
             <!-- 面板头部（原版 tL）：App 图标 + 飞牛音乐 -->
             <header class="auth-panel-header">
               <img :src="appIconUrl" class="auth-panel-logo" alt="" />
@@ -266,8 +263,6 @@ onUnmounted(() => {
                 <h1 class="auth-panel-title">飞牛音乐</h1>
               </div>
             </header>
-
-            <p v-if="errorMsg" class="auth-panel-error" role="alert">{{ errorMsg }}</p>
 
             <form class="auth-login-form auth-form-stack" @submit.prevent="submitPasswordLogin">
               <div class="auth-form-group auth-reveal">
@@ -283,7 +278,7 @@ onUnmounted(() => {
                 <div class="auth-input-wrapper auth-input-wrapper--password">
                   <label for="password">密码</label>
                   <input id="password" v-model="password" :type="showPassword ? 'text' : 'password'" placeholder="请输入密码"
-                    autocomplete="current-password" />
+                    autocomplete="current-password" aria-required="false" aria-labelledby="password-label" />
                   <button class="password-toggle" type="button" tabindex="-1"
                     :aria-label="showPassword ? '隐藏密码' : '显示密码'" @click="showPassword = !showPassword">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
@@ -409,7 +404,7 @@ onUnmounted(() => {
 
 .auth-panel-title {
   margin: 0;
-  font-size: 44px;
+  font-size: 40px;
   line-height: 54px;
   font-weight: 700;
   letter-spacing: -1.76px;

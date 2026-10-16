@@ -12,16 +12,21 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "飞牛音乐",
-        "width": 1080,
-        "height": 700,
         "minWidth": 860,
-        "minHeight": 560,
-        "center": true
+        "minHeight": 580,
+        "width": 1080.0,
+        "height": 700.0
       }
     ],
     "security": {
       "csp": null
+    },
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "title": "飞牛音乐",
+      "tooltip": "飞牛音乐"
     }
   },
   "bundle": {
