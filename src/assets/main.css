@@ -1,12 +1,68 @@
-/* 桌面端基础 reset —— auth/组件样式全部由原版 CSS（assets/original/）提供 */
+@font-face {
+  font-family: Montserrat;
+  src: url(../fonts/Montserrat-Regular.ttf)format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap
+}
+
+@font-face {
+  font-family: Montserrat;
+  src: url(../fonts/Montserrat-Medium.ttf)format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap
+}
+
+@font-face {
+  font-family: Montserrat;
+  src: url(../fonts/Montserrat-SemiBold.ttf)format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap
+}
+
+@font-face {
+  font-family: Montserrat;
+  src: url(../fonts/Montserrat-Bold.ttf)format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap
+}
 
 * {
   box-sizing: border-box;
 }
 
+:root,
+body {
+  --ds-font-family-base: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ds-accent-red: #f62c55;
+  --ds-accent-pink: #f05672;
+  --ds-accent-orange: #fc5e25;
+  --ds-accent-yellow: #f8bf28;
+  --ds-accent-purple: #c934e1;
+  --ds-accent-blue: #1b73fb;
+  --ds-accent-green: #6bab45;
+  --ds-accent-current: var(--ds-accent-purple);
+  --ds-accent-on-current: #fff
+}
+
+html,
+:host {
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+  line-height: 1.5;
+  font-family: var(--ds-font-family-base), system-ui, sans-serif;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  -webkit-tap-highlight-color: transparent
+}
+
 html,
 body,
 #app {
+
   margin: 0;
   padding: 0;
   height: 100%;

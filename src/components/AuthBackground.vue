@@ -6,7 +6,7 @@
  *   PlaneGeometry(2,2) + ShaderMaterial(原版 shader) + Clock + 鼠标 lerp(0.05) + dispose/forceContextLoss
  * shader 源码（ie/ae）为原版 chunk 原文。
  */
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue"
 import {
   Scene,
   OrthographicCamera,
@@ -18,10 +18,10 @@ import {
   Clock,
   Color,
   NormalBlending,
-} from "../vendor/three-original.js";
+} from "../vendor/three-original.js"
 
 /* 原版 oe 的 containerRef 指向 .auth-background__webgl 子层 */
-const webglEl = ref<HTMLElement | null>(null);
+const webglEl = ref<HTMLElement | null>(null)
 
 /* 原版 vertex shader（ie） */
 const VERT = `
@@ -31,7 +31,7 @@ void main() {
   vUv = uv;
   gl_Position = vec4(position, 1.0);
 }
-`;
+`
 
 /* 原版 fragment shader（ae） */
 const FRAG = `
@@ -142,47 +142,47 @@ void main() {
 
   gl_FragColor = vec4(color, 1.0);
 }
-`;
+`
 
 /* 原版 T()：容器尺寸 */
 function getSize(el: HTMLElement): { width: number; height: number } {
   return {
     width: el.clientWidth || window.innerWidth,
     height: el.clientHeight || window.innerHeight,
-  };
+  }
 }
 
 /* 原版 E()：从 CSS 变量读取 shader 颜色 */
 function readShaderColors(el: HTMLElement): { core: Color; fringe: Color } {
-  const style = window.getComputedStyle(el);
-  const coreStr = style.getPropertyValue("--auth-shader-core").trim() || "#ffffff";
-  const fringeStr = style.getPropertyValue("--auth-shader-fringe").trim() || "#4a88ff";
-  return { core: new Color(coreStr), fringe: new Color(fringeStr) };
+  const style = window.getComputedStyle(el)
+  const coreStr = style.getPropertyValue("--auth-shader-core").trim() || "#ffffff"
+  const fringeStr = style.getPropertyValue("--auth-shader-fringe").trim() || "#4a88ff"
+  return { core: new Color(coreStr), fringe: new Color(fringeStr) }
 }
 
-let cleanup: (() => void) | null = null;
+let cleanup: (() => void) | null = null
 
 onMounted(() => {
-  const container = webglEl.value;
-  if (!container) return;
+  const container = webglEl.value
+  if (!container) return
 
-  const scene = new Scene();
-  const camera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
-  camera.position.z = 1;
+  const scene = new Scene()
+  const camera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 10)
+  camera.position.z = 1
   const renderer = new WebGLRenderer({
     alpha: true,
     antialias: true,
     powerPreference: "high-performance",
-  });
+  })
 
-  const { width, height } = getSize(container);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(width, height, false);
-  renderer.domElement.className = "auth-background__canvas";
-  container.replaceChildren(renderer.domElement);
+  const { width, height } = getSize(container)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+  renderer.setSize(width, height, false)
+  renderer.domElement.className = "auth-background__canvas"
+  container.replaceChildren(renderer.domElement)
 
-  const geometry = new PlaneGeometry(2, 2);
-  const { core, fringe } = readShaderColors(container);
+  const geometry = new PlaneGeometry(2, 2)
+  const { core, fringe } = readShaderColors(container)
   const material = new ShaderMaterial({
     vertexShader: VERT,
     fragmentShader: FRAG,
@@ -196,54 +196,54 @@ onMounted(() => {
     },
     transparent: true,
     blending: NormalBlending,
-  });
-  const mesh = new Mesh(geometry, material);
-  const targetMouse = new Vector2(0.5, 0.5);
-  const clock = new Clock();
-  scene.add(mesh);
+  })
+  const mesh = new Mesh(geometry, material)
+  const targetMouse = new Vector2(0.5, 0.5)
+  const clock = new Clock()
+  scene.add(mesh)
 
   const handleMouseMove = (e: MouseEvent) => {
-    targetMouse.x = e.clientX / window.innerWidth;
-    targetMouse.y = 1 - e.clientY / window.innerHeight;
-  };
+    targetMouse.x = e.clientX / window.innerWidth
+    targetMouse.y = 1 - e.clientY / window.innerHeight
+  }
   const handleResize = () => {
-    const size = getSize(container);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(size.width, size.height, false);
-    material.uniforms.u_resolution.value = new Vector2(size.width, size.height);
-  };
+    const size = getSize(container)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    renderer.setSize(size.width, size.height, false)
+    material.uniforms.u_resolution.value = new Vector2(size.width, size.height)
+  }
 
-  let frameId = 0;
+  let frameId = 0
   const loop = () => {
-    frameId = window.requestAnimationFrame(loop);
-    material.uniforms.u_time.value = clock.getElapsedTime();
+    frameId = window.requestAnimationFrame(loop)
+    material.uniforms.u_time.value = clock.getElapsedTime()
     material.uniforms.u_mouse.value = (material.uniforms.u_mouse.value as Vector2).lerp(
       targetMouse,
       0.05,
-    );
-    renderer.render(scene, camera);
-  };
-  window.addEventListener("mousemove", handleMouseMove);
-  window.addEventListener("resize", handleResize);
-  loop();
+    )
+    renderer.render(scene, camera)
+  }
+  window.addEventListener("mousemove", handleMouseMove)
+  window.addEventListener("resize", handleResize)
+  loop()
 
   cleanup = () => {
-    window.removeEventListener("mousemove", handleMouseMove);
-    window.removeEventListener("resize", handleResize);
-    if (frameId !== null) window.cancelAnimationFrame(frameId);
-    scene.remove(mesh);
-    geometry.dispose();
-    material.dispose();
-    renderer.dispose();
-    renderer.forceContextLoss();
-    container.replaceChildren();
-  };
-});
+    window.removeEventListener("mousemove", handleMouseMove)
+    window.removeEventListener("resize", handleResize)
+    if (frameId !== null) window.cancelAnimationFrame(frameId)
+    scene.remove(mesh)
+    geometry.dispose()
+    material.dispose()
+    renderer.dispose()
+    renderer.forceContextLoss()
+    container.replaceChildren()
+  }
+})
 
 onUnmounted(() => {
-  cleanup?.();
-  cleanup = null;
-});
+  cleanup?.()
+  cleanup = null
+})
 </script>
 
 <template>
@@ -257,4 +257,46 @@ onUnmounted(() => {
 <style scoped>
 /* 三层结构与 canvas 样式全部由原版 CSS 提供：
    .auth-background / __webgl / __grain / __vignette / __canvas（assets/original/02-main.css） */
+.auth-background {
+  z-index: 0;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden
+}
+
+.auth-background__webgl,
+.auth-background__grain,
+.auth-background__vignette {
+  position: absolute;
+  inset: 0
+}
+
+.auth-background__webgl {
+  z-index: 0
+}
+
+.auth-background__grain {
+  z-index: 1;
+  opacity: .08;
+  background-image: linear-gradient(color-mix(in srgb, var(--auth-text-primary) 12%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--auth-text-primary) 12%, transparent) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(circle, #000 0%, #0000 78%);
+  mask-image: radial-gradient(circle, #000 0%, #0000 78%)
+}
+
+.auth-background__vignette {
+  z-index: 2;
+  background: radial-gradient(ellipse var(--auth-shader-vignette-x) var(--auth-shader-vignette-y) at left bottom, transparent 0%, transparent 38%, #0f0f0f6b 66%, #0f0f0fd1 86%, var(--ds-bg-primary) 100%), linear-gradient(180deg, transparent 0%, transparent 42%, #0f0f0f29 100%), radial-gradient(circle at center, transparent 0%, #0f0f0f14 100%)
+}
+
+@supports (color:color-mix(in srgb, black 50%, white)) {
+  .auth-background__vignette {
+    background: radial-gradient(ellipse var(--auth-shader-vignette-x) var(--auth-shader-vignette-y) at left bottom, transparent 0%, transparent 38%, color-mix(in srgb, var(--ds-bg-primary) 42%, transparent) 66%, color-mix(in srgb, var(--ds-bg-primary) 82%, transparent) 86%, var(--ds-bg-primary) 100%), linear-gradient(180deg, transparent 0%, transparent 42%, color-mix(in srgb, var(--ds-bg-primary) 16%, transparent) 100%), radial-gradient(circle at center, transparent 0%, color-mix(in srgb, var(--ds-bg-primary) 8%, transparent) 100%)
+  }
+}
+
+.auth-background[data-safari=true] .auth-background__vignette {
+  background: linear-gradient(90deg, transparent 0%, transparent 36%, color-mix(in srgb, var(--ds-bg-primary) 18%, transparent) 58%, color-mix(in srgb, var(--ds-bg-primary) 72%, transparent) 82%, var(--ds-bg-primary) 100%), linear-gradient(180deg, color-mix(in srgb, var(--ds-bg-primary) 92%, transparent) 0%, color-mix(in srgb, var(--ds-bg-primary) 74%, transparent) 34%, color-mix(in srgb, var(--ds-bg-primary) 18%, transparent) 70%, transparent 100%)
+}
 </style>
