@@ -22,7 +22,7 @@ const router = createRouter({
         { path: 'artists', name: 'home-artists', component: () => import("../views/home/artistsView.vue") },
         { path: 'genres', name: 'home-genres', component: () => import("../views/home/genresView.vue") },
         { path: 'library', name: 'home-library', component: () => import("../views/home/libraryView.vue") },
-        { path: 'playlists', name: 'home-playlists', component: () => import("../views/home/playlistsView.vue") },
+        { path: 'playlists/:playlistId', name: 'home-playlists', component: () => import("../views/home/playlistsView.vue") },
         { path: '/settings', name: 'home-settings', component: () => import("../views/home/settingsView.vue") },
       ]
     },

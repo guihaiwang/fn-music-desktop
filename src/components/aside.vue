@@ -37,8 +37,9 @@
                 </div>
             </div>
             <div class="playlist-list">
-                <div class="playlist-item" v-for="pl in playlists" :key="pl.guid" :title="pl.name"
-                    @click="handlePlaylistClick(pl)">
+                <div class="playlist-item"
+                    :class="{ 'active': pl.guid == $route.params.playlistId && $route.name == 'home-playlists' }"
+                    v-for="pl in playlists" :key="pl.guid" :title="pl.name" @click="handlePlaylistClick(pl)">
                     <img v-if="pl.coverId && coverUrls[pl.coverId]" class="playlist-cover" :src="coverUrls[pl.coverId]"
                         alt="" loading="lazy" decoding="async" draggable="false" />
                     <Transition name="aside">
@@ -124,9 +125,9 @@ async function loadPlaylists() {
     }
 }
 
-function handlePlaylistClick(_pl: Playlist) {
+function handlePlaylistClick(pl: Playlist) {
     // TODO: 歌单详情路由就绪后携带 guid 跳转，暂先进入歌单页
-    router.push({ name: 'home-playlists' })
+    router.push({ name: 'home-playlists', params: { playlistId: pl.guid } })
 }
 
 /** 封面 blob URL 缓存：coverId → objectURL（fetchCoverUrl 内部也有缓存，此处驱动响应式更新） */
@@ -188,16 +189,6 @@ function handleAddPlaylist() { }
 </script>
 
 <style scoped>
-/* 歌单列表滚动条（顶层规则，避免嵌套作用域编译问题） */
-.playlist-list::-webkit-scrollbar {
-    width: 4px;
-}
-
-.playlist-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.16);
-    border-radius: 2px;
-}
-
 .aside-content {
     width: v-bind(width);
     height: 100%;
@@ -310,6 +301,7 @@ function handleAddPlaylist() { }
 
         .add {
             font-size: 12px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -319,9 +311,6 @@ function handleAddPlaylist() { }
 
     .playlist-list {
         width: 100%;
-        min-height: 0;
-        margin-top: 4px;
-        overflow-y: auto;
         display: flex;
         flex-direction: column;
         gap: 2px;
@@ -329,9 +318,9 @@ function handleAddPlaylist() { }
 
     .playlist-item {
         width: 100%;
-        height: 30px;
+        height: 32px;
         flex: none;
-        padding: 0 11px;
+        padding: 0 8px;
         display: flex;
         align-items: center;
         justify-content: flex-start;
@@ -342,14 +331,12 @@ function handleAddPlaylist() { }
         user-select: none;
         -webkit-user-select: none;
 
-        &:hover {
+        &.active {
             background-color: #ffffff14;
         }
 
-        .playlist-icon {
-            display: inline-flex;
-            flex: none;
-            color: rgba(255, 255, 255, 0.62);
+        &:hover {
+            background-color: #ffffff14;
         }
 
         .playlist-cover {
@@ -358,11 +345,11 @@ function handleAddPlaylist() { }
             flex: none;
             border-radius: 4px;
             object-fit: cover;
-            background: rgba(255, 255, 255, 0.08);
         }
 
         .playlist-name {
-            font-size: 13px;
+            font-size: 12px;
+            width: 135px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -391,7 +378,7 @@ function handleAddPlaylist() { }
 
     .aside-enter-active,
     .aside-leave-active {
-        transition: opacity 0.4s ease;
+        transition: opacity 0.3s ease;
     }
 
     .aside-enter-from,
