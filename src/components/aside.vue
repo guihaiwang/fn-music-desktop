@@ -372,6 +372,12 @@ function handleCollapse() {
 
 .aside-content {
     width: v-bind(width);
+    /* 禁止被 flex 压缩：.main 的 width:100% 基准巨大，会把 aside 挤成小数宽度，
+       导致行背景右边缘落在半个设备像素上，WKWebView 的 backdrop-filter 光栅
+       在该列错位 1px，透过 active/hover 行的半透明背景显示为一条会漂移的竖线 */
+    flex: none;
+    /* 强独占一层合成，稳定 backdrop-filter 的光栅化 */
+    transform: translateZ(0);
     height: 100%;
     padding: 30px 15px 15px;
     overflow: hidden;

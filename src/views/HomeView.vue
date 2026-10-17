@@ -26,11 +26,11 @@ const containerClass = computed(() => {
   <div class="container" :class="containerClass">
     <Aside />
     <div class="main">
-      <div class="top" v-show="route.name != 'home-settings'">1</div>
+      <div class="top" :class="{ 'hidden': route.name == 'home-settings' }">1</div>
       <div class="main-content">
         <router-view />
       </div>
-      <div class="play" v-show="route.name != 'home-settings'">
+      <div class="play" :class="{ 'hidden': route.name == 'home-settings' }">
         <Play />
       </div>
     </div>
@@ -177,7 +177,10 @@ const containerClass = computed(() => {
   }
 
   .main {
-    width: 100%;
+    /* 用 flex 基准 0 瓜分剩余宽度，而不是 width:100% 靠 flex-shrink 兜底
+       （后者会让 main 与内部元素落在不同小数像素上） */
+    flex: 1 1 0;
+    min-width: 0;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -190,6 +193,11 @@ const containerClass = computed(() => {
       color: #fff;
       background-color: rgba(0, 0, 0, 0.01);
       border-bottom: 1px solid #ffffff1f;
+
+      &.hidden {
+        position: absolute;
+        top: -200%;
+      }
     }
 
     .main-content {
@@ -199,6 +207,11 @@ const containerClass = computed(() => {
     .play {
       border-top: 1px solid #ffffff1f;
       height: 70px;
+
+      &.hidden {
+        position: absolute;
+        bottom: -200%;
+      }
     }
   }
 }

@@ -16,8 +16,8 @@
  *   <Scrollbar max-height="calc(100vh - 120px)" />
  *
  * 滑块显示时机：
- *   - 默认：悬停滚动区或拖动滑块时显示，其余时刻隐藏；隐藏时 pointer-events:none，
- *     不会拦截下方内容的点击（配合下方「预留留白」可彻底避免遮挡按钮）
+ *   - 默认：滚动时出现，停止滚动约 0.7s 后淡出；拖动滑块期间持续可见。
+ *     悬停不显示——窄侧边栏（如应用侧栏）里静止的滑块会被误认为一条"竖线"
  *   - <Scrollbar always> ：常显（内容可滚动时）
  *   - 想要滑块完全不压住内容：给 wrap 预留留白即可，滑块只落在留白里，例如
  *       .my-list :deep(.fnm-scrollbar__wrap) { padding-right: 10px }
@@ -57,7 +57,7 @@ const props = withDefaults(
     maxHeight?: CssUnit
     /** true 时保留原生滚动条、不渲染自绘滑块（降级/特殊场景用） */
     native?: boolean
-    /** true 时滑块常显；false（默认）为悬停容器 / 拖动时显示 */
+    /** true 时滑块常显；false（默认）为滚动时短暂显示 / 拖动时显示 */
     always?: boolean
     /** 内容层（view）使用的标签名 */
     tag?: string
@@ -86,6 +86,9 @@ const widthRatio = ref(1)
 const moveY = ref(0)
 const moveX = ref(0)
 const dragging = ref<Axis | null>(null)
+/** 滚动中标记：滚动时短暂显示滑块，停止后淡出（对齐 macOS 原生滚动条行为） */
+const scrolling = ref(false)
+let scrollHideTimer: ReturnType<typeof setTimeout> | null = null
 
 const canScrollY = computed(() => heightRatio.value < 1)
 const canScrollX = computed(() => widthRatio.value < 1)
@@ -130,6 +133,13 @@ function handleScroll() {
   moveY.value = wrap.clientHeight > 0 ? (wrap.scrollTop * 100) / wrap.clientHeight : 0
   moveX.value = wrap.clientWidth > 0 ? (wrap.scrollLeft * 100) / wrap.clientWidth : 0
   emit("scroll", { scrollTop: wrap.scrollTop, scrollLeft: wrap.scrollLeft })
+  // 滚动时点亮滑块，停止滚动 0.7s 后淡出
+  scrolling.value = true
+  if (scrollHideTimer) clearTimeout(scrollHideTimer)
+  scrollHideTimer = setTimeout(() => {
+    scrolling.value = false
+    scrollHideTimer = null
+  }, 700)
 }
 
 function scrollTo(options: ScrollToOptions): void
@@ -249,6 +259,7 @@ onMounted(observe)
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
+  if (scrollHideTimer) clearTimeout(scrollHideTimer)
   if (dragState) onDragEnd()
 })
 
@@ -264,7 +275,8 @@ defineExpose({
 </script>
 
 <template>
-  <div class="fnm-scrollbar" :class="{ 'is-native': native, 'is-always': always, 'is-dragging': dragging }">
+  <div class="fnm-scrollbar"
+    :class="{ 'is-native': native, 'is-always': always, 'is-dragging': dragging, 'is-scrolling': scrolling }">
     <div ref="wrapRef" class="fnm-scrollbar__wrap" :class="wrapClass" :style="[sizeStyle, wrapStyle]"
       @scroll="handleScroll">
       <component :is="tag" ref="viewRef" class="fnm-scrollbar__view" :class="viewClass" :style="viewStyle">
@@ -338,8 +350,10 @@ defineExpose({
   transition: opacity 0.25s ease, width 0.15s ease;
 }
 
-/* 显示时机：悬停容器 / 常显 / 拖动中（拖动时指针可能离开容器，需保持可见） */
-.fnm-scrollbar:hover>.fnm-scrollbar__bar,
+/* 显示时机：滚动中 / 常显 / 拖动中（拖动时指针可能离开容器，需保持可见）。
+   刻意不做「悬停容器即显示」：窄侧边栏里静止的滑块会被当成一条莫名的竖线；
+   对齐 macOS 原生滚动条——滚动时出现，停止后淡出 */
+.fnm-scrollbar.is-scrolling .fnm-scrollbar__bar,
 .fnm-scrollbar.is-always .fnm-scrollbar__bar,
 .fnm-scrollbar.is-dragging .fnm-scrollbar__bar {
   opacity: 1;
