@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
-import { useRoute, useRouter } from "vue-router"
-import { useAuthStore } from "../stores/auth"
-import { logout } from "../api/auth"
+import { computed } from "vue"
+import { useRoute } from "vue-router"
 import Aside from "../components/aside.vue"
-import logoUrl from "../assets/logo.png"
 
-const router = useRouter()
 const route = useRoute()
-const auth = useAuthStore()
 const containerClass = computed(() => {
   switch (route.name) {
     case "home-favorites":
@@ -24,21 +19,6 @@ const containerClass = computed(() => {
       return "primary"
   }
 })
-
-const displayName = computed(() => {
-  const u = auth.user as Record<string, unknown> | null
-  return (u?.name ?? u?.username ?? u?.nickname ?? "用户") as string
-})
-
-async function doLogout() {
-  try {
-    await logout()
-  } catch {
-    /* 服务端登出失败不阻塞本地清理 */
-  }
-  auth.clearSession()
-  router.replace({ name: "login" })
-}
 </script>
 
 <template>

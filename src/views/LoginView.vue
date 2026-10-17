@@ -4,7 +4,8 @@ import { invoke } from "@tauri-apps/api/core"
 import { listen, type UnlistenFn } from "@tauri-apps/api/event"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "../stores/auth"
-import { authLogin, buildNasOauthUrl, getSysConfig, passwordLogin } from "../api/auth"
+import { authLogin, buildNasOauthUrl, getCurrentUser, getSysConfig, passwordLogin } from "../api/auth"
+import type { LoginResult } from "../api/types"
 import { getDeviceId } from "../utils/device"
 import { message } from "../components/message/message"
 import AuthBackground from "../components/AuthBackground.vue"
@@ -117,10 +118,28 @@ function ensureServer(): boolean {
 async function checkServer() {
   if (!ensureServer()) return
   try {
-    await getSysConfig()
+    const cfg = await getSysConfig()
+    // 记录登录服务器信息（serverName），供侧边栏等处展示
+    auth.setServerName(cfg.serverName || "")
   } catch (e) {
     message.error(e instanceof Error ? e.message : String(e))
   }
+}
+
+/**
+ * 登录成功后的统一收尾：
+ * 1. 写入会话（token + 登录接口返回的 user）
+ * 2. 再拉一次 /user/me 补全用户信息（登录接口返回的 user 可能缺字段）
+ */
+async function completeLogin(result: LoginResult) {
+  auth.setSession(result.userToken, result.user)
+  try {
+    const me = await getCurrentUser()
+    if (me) auth.setSession(result.userToken, me)
+  } catch {
+    /* /user/me 失败不阻塞进入主页，保留登录接口返回的用户信息 */
+  }
+  router.replace({ name: "home" })
 }
 
 /** 用户名密码登录 */
@@ -135,8 +154,7 @@ async function submitPasswordLogin() {
   try {
     const result = await passwordLogin(username.value.trim(), password.value, getDeviceId())
     if (rememberMe.value) localStorage.setItem("fnm.username", username.value.trim())
-    auth.setSession(result.userToken, result.user)
-    router.replace({ name: "home" })
+    await completeLogin(result)
   } catch (e) {
     message.error(e instanceof Error ? e.message : String(e))
   } finally {
@@ -170,8 +188,7 @@ async function handleSsoCode(code: string) {
     if (rememberMe.value && username.value.trim()) {
       localStorage.setItem("fnm.username", username.value.trim())
     }
-    auth.setSession(result.userToken, result.user)
-    router.replace({ name: "home" })
+    await completeLogin(result)
   } catch (e) {
     message.error(e instanceof Error ? e.message : String(e))
   }

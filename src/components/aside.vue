@@ -1,13 +1,17 @@
 <template>
     <div class="aside-content">
-        <div class="user">
-            <img src="../assets/logo.png" alt="飞牛音乐" class="user-avatar" />
-            <Transition name="aside">
-                <div class="user-info" v-show="!isCollapsed">
-                    <span class="username">{{ username }}</span>
-                    <span class="badge">管理员</span>
+        <div class="user-dd">
+            <DropdownMenu stretch :items="userItems" placement="bottom-end" @select="onUserSelect">
+                <div class="user" :title="auth.serverName || auth.serverUrl || '未连接服务器'">
+                    <img src="../assets/logo.png" alt="飞牛音乐" class="user-avatar" />
+                    <Transition name="aside">
+                        <div class="user-info" v-show="!isCollapsed">
+                            <span class="username">{{ auth.user?.name }}</span>
+                            <span class="badge" v-if="auth.isAdmin">管理员</span>
+                        </div>
+                    </Transition>
                 </div>
-            </Transition>
+            </DropdownMenu>
         </div>
         <div class="menus">
             <div class="menu-item" :class="{ 'active': menu.path === $route.name }" v-for="menu in menus"
@@ -78,8 +82,30 @@ import ArtistsIcon from '../assets/iconfont/artists.svg?raw'
 import GenresIcon from '../assets/iconfont/genres.svg?raw'
 import LibraryIcon from '../assets/iconfont/library.svg?raw'
 import { ref } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import { logout } from '../api/auth'
+import DropdownMenu, { type DropdownItem } from './DropdownMenu.vue'
 
 const router = useRouter()
+const auth = useAuthStore()
+
+const LogoutIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>`
+
+const userItems: DropdownItem[] = [
+    { key: 'logout', label: '退出登录', icon: LogoutIcon, danger: true },
+]
+
+async function onUserSelect(item: DropdownItem) {
+    if (item.key !== 'logout') return
+    try {
+        await logout()
+    } catch {
+        /* 服务端登出失败不阻塞本地清理 */
+    }
+    auth.clearSession()
+    router.replace({ name: 'login' })
+}
+
 const menus = [
     { title: "首页", path: 'home-index', icon: HomeIcon },
     { title: "收藏", path: 'home-favorites', icon: FavoriteIcon },
@@ -91,7 +117,6 @@ const menus = [
 ]
 const isCollapsed = ref(false)
 const width = ref('220px')
-const username = ref('飞牛')
 
 function handleClick(path: string) {
     router.push({ name: path })
@@ -131,6 +156,10 @@ function handleAddPlaylist() { }
         margin: -10px -15px;
     }
 
+    .user-dd {
+        width: 100%;
+    }
+
     .user {
         width: 100%;
         height: 36px;
@@ -140,6 +169,12 @@ function handleAddPlaylist() { }
         padding: 0 3px;
         gap: 10px;
         overflow: hidden;
+        cursor: default;
+        border-radius: var(--radius);
+
+        &:hover {
+            background-color: #ffffff0d;
+        }
 
         .user-avatar {
             width: 30px;

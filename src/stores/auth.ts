@@ -7,6 +7,7 @@ import { computed, ref } from "vue"
 import type { FnUser } from "../api/types"
 
 const LS_SERVER = "fnm.serverUrl"
+const LS_SERVER_NAME = "fnm.serverName"
 const LS_TOKEN = "fnm.token"
 const LS_USER = "fnm.user"
 
@@ -20,10 +21,13 @@ function readLS(key: string): string {
 
 export const useAuthStore = defineStore("auth", () => {
   const serverUrl = ref(readLS(LS_SERVER) || "")
+  const serverName = ref(readLS(LS_SERVER_NAME))
   const token = ref(readLS(LS_TOKEN))
   const user = ref<FnUser | null>(safeParse(readLS(LS_USER)))
 
   const isLoggedIn = computed(() => token.value.length > 0)
+
+  const isAdmin = computed(() => user.value?.role === "admin")
 
   function safeParse(raw: string): FnUser | null {
     try {
@@ -36,6 +40,12 @@ export const useAuthStore = defineStore("auth", () => {
   function setServer(url: string) {
     serverUrl.value = url.trim().replace(/\/+$/, "")
     localStorage.setItem(LS_SERVER, serverUrl.value)
+  }
+
+  /** 记录 /sys/config 返回的登录服务器信息（登出不清除，回到登录页仍可展示） */
+  function setServerName(name: string) {
+    serverName.value = name.trim()
+    localStorage.setItem(LS_SERVER_NAME, serverName.value)
   }
 
   function setSession(newToken: string, newUser: FnUser) {
@@ -52,5 +62,16 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.removeItem(LS_USER)
   }
 
-  return { serverUrl, token, user, isLoggedIn, setServer, setSession, clearSession }
+  return {
+    serverUrl,
+    serverName,
+    token,
+    user,
+    isLoggedIn,
+    isAdmin,
+    setServer,
+    setServerName,
+    setSession,
+    clearSession,
+  }
 })

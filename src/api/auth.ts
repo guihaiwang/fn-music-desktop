@@ -1,24 +1,37 @@
 /**
- * 飞牛音乐认证相关 API。
- * 端点逆向自 web 端 bundle 的路由表（q.user.* / q.sys.*）：
+ * 飞牛音乐认证相关 API（对应原版 web 客户端的 auth 接口组）。
+ *
  *   GET  /sys/config
- *   POST /user/auth-login      {code, deviceId}      — SSO code 换 token
- *   POST /user/password-login  {username, password(sha256 hex), deviceId}
+ *   GET  /initialization/state
+ *   POST /initialization/prepare    {code, deviceId}
+ *   POST /initialization/confirm    {sessionId, user:{name,password}, server:{name,lang}}
+ *   POST /user/auth-login           {code, deviceId}      — SSO code 换 token
+ *   POST /user/password-login       {username, password(sha256 hex), deviceId}
  *   GET  /user/me
  *   POST /user/logout
  */
 import { apiRequest } from "./http";
-import type { FnUser, LoginResult, SysConfig } from "./types";
+import { API_ROUTES as R } from "./endpoints";
+import { initializationApi } from "./music";
 import { useAuthStore } from "../stores/auth";
+import type {
+  FnUser,
+  InitializationPrepareResponse,
+  InitializationState,
+  LoginResult,
+  SysConfig,
+} from "./models";
+
+export { initializationApi };
 
 /** 获取系统配置（含 nasOAuth.clientId / serverName） */
 export function getSysConfig(): Promise<SysConfig> {
-  return apiRequest<SysConfig>("GET", "/sys/config");
+  return apiRequest<SysConfig>("GET", R.sys.config);
 }
 
 /** SSO 授权码换取登录态 */
 export function authLogin(code: string, deviceId: string): Promise<LoginResult> {
-  return apiRequest<LoginResult>("POST", "/user/auth-login", { code, deviceId });
+  return apiRequest<LoginResult>("POST", R.user.authLogin, { code, deviceId });
 }
 
 /** SHA-256 hex（Web Crypto） */
@@ -36,7 +49,7 @@ export function passwordLogin(
   deviceId: string,
 ): Promise<LoginResult> {
   return sha256Hex(password).then((hashed) =>
-    apiRequest<LoginResult>("POST", "/user/password-login", {
+    apiRequest<LoginResult>("POST", R.user.passwordLogin, {
       username,
       password: hashed,
       deviceId,
@@ -46,12 +59,36 @@ export function passwordLogin(
 
 /** 当前登录用户 */
 export function getCurrentUser(): Promise<FnUser> {
-  return apiRequest<FnUser>("GET", "/user/me");
+  return apiRequest<FnUser>("GET", R.user.me);
 }
 
 /** 登出 */
 export function logout(): Promise<unknown> {
-  return apiRequest<unknown>("POST", "/user/logout");
+  return apiRequest("POST", R.user.logout);
+}
+
+/* ==================== 初始化（首次使用向导） ==================== */
+
+/** 应用是否已初始化 */
+export function getInitializationState(): Promise<InitializationState> {
+  return initializationApi.state();
+}
+
+/** 用 NAS SSO 授权码创建初始化会话（返回 sessionId + 管理员信息） */
+export function prepareInitialization(req: {
+  code: string;
+  deviceId: string;
+}): Promise<InitializationPrepareResponse> {
+  return initializationApi.prepare(req);
+}
+
+/** 确认初始化（设置管理员账号/服务器名），返回登录态 */
+export function confirmInitialization(req: {
+  sessionId: string;
+  user: { name: string; password: string };
+  server: { name: string; lang: string };
+}): Promise<LoginResult> {
+  return initializationApi.confirm(req);
 }
 
 /**

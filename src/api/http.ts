@@ -52,7 +52,8 @@ export async function apiRequest<T>(
   const headers: Record<string, string> = {
     authx: buildAuthx(method, url.toString(), method === "GET" ? undefined : body, opts.apiKey),
   };
-  if (method === "POST" && body != null) {
+  // FormData（封面上传等）：交给 fetch 自动生成 multipart boundary，不手动设 Content-Type
+  if (method === "POST" && body != null && !(body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
   if (auth.token) {
@@ -64,7 +65,12 @@ export async function apiRequest<T>(
     resp = await fetch(url.toString(), {
       method,
       headers,
-      body: method === "GET" || body == null ? undefined : JSON.stringify(body),
+      body:
+        method === "GET" || body == null
+          ? undefined
+          : body instanceof FormData
+            ? body
+            : JSON.stringify(body),
       connectTimeout: opts.timeoutMs ?? 8000,
     });
   } catch (e) {
