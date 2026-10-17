@@ -2,6 +2,7 @@
 import { computed } from "vue"
 import { useRoute } from "vue-router"
 import Aside from "../components/aside.vue"
+import Play from "../components/play.vue"
 
 const route = useRoute()
 const containerClass = computed(() => {
@@ -25,9 +26,14 @@ const containerClass = computed(() => {
   <div class="container" :class="containerClass">
     <Aside />
     <div class="main">
-      <router-view />
+      <div class="top">1</div>
+      <div class="main-content">
+        <router-view />
+      </div>
+      <div class="play">
+        <Play />
+      </div>
     </div>
-    <div class="play"></div>
   </div>
 </template>
 
@@ -102,7 +108,6 @@ const containerClass = computed(() => {
     }
   }
 
-
   &.event1 {
     background: var(--bg-gradient-primary);
 
@@ -171,5 +176,30 @@ const containerClass = computed(() => {
     }
   }
 
+  .main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+    padding: 20px 15px 15px;
+
+    .top {
+      height: 45px;
+      color: #fff;
+      background-color: rgba(0, 0, 0, 0.01);
+      border-bottom: 1px solid #ffffff1f;
+    }
+
+    .main-content {
+      flex: 1 1 auto;
+    }
+
+    .play {
+      border-top: 1px solid #ffffff1f;
+      height: 70px;
+    }
+  }
 }
 </style>

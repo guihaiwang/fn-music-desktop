@@ -66,7 +66,7 @@
             </div>
             <Transition name="aside">
                 <div class="setting button" @click="$router.push({ name: 'home-settings' })" title="设置"
-                    v-show="!isCollapsed">
+                    v-show="!isCollapsed" :class="{ 'active': $route.name == 'home-settings' }">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"
                         fill="currentColor" class="size-4">
                         <path fill-rule="evenodd" clip-rule="evenodd"
@@ -79,6 +79,7 @@
                 </div>
             </Transition>
         </div>
+        <AddPlaylist v-if="showAddPlaylist" @close="showAddPlaylist = false" @created="onPlaylistCreated" />
     </div>
 </template>
 
@@ -98,6 +99,7 @@ import { fetchCoverUrl, playlistApi } from '../api/music'
 import type { Playlist } from '../api/models'
 import { message } from './message/message'
 import DropdownMenu, { type DropdownItem } from './DropdownMenu.vue'
+import AddPlaylist from './addPlaylist.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -128,6 +130,19 @@ async function loadPlaylists() {
 function handlePlaylistClick(pl: Playlist) {
     // TODO: 歌单详情路由就绪后携带 guid 跳转，暂先进入歌单页
     router.push({ name: 'home-playlists', params: { playlistId: pl.guid } })
+}
+
+/* ==================== 新建歌单 ==================== */
+const showAddPlaylist = ref(false)
+
+function handleAddPlaylist() {
+    showAddPlaylist.value = true
+}
+
+/** 创建成功：插入列表头部并跳转到该歌单 */
+function onPlaylistCreated(playlist: Playlist) {
+    playlists.value.unshift(playlist)
+    router.push({ name: 'home-playlists', params: { playlistId: playlist.guid } })
 }
 
 /** 封面 blob URL 缓存：coverId → objectURL（fetchCoverUrl 内部也有缓存，此处驱动响应式更新） */
@@ -185,7 +200,6 @@ function handleCollapse() {
         width.value = '220px'
     }
 }
-function handleAddPlaylist() { }
 </script>
 
 <style scoped>
@@ -363,13 +377,17 @@ function handleAddPlaylist() { }
         width: 100%;
         border-top: 1px solid #ffffff1f;
         padding-top: 10px;
-
+        gap: 10px;
     }
 
     .button {
         cursor: pointer;
         padding: 10px;
         border-radius: var(--radius);
+
+        &.active {
+            background-color: #ffffff14;
+        }
 
         &:hover {
             background-color: #ffffff1f;
