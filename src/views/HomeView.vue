@@ -26,11 +26,11 @@ const containerClass = computed(() => {
   <div class="container" :class="containerClass">
     <Aside />
     <div class="main">
-      <div class="top">1</div>
+      <div class="top" v-show="route.name != 'home-settings'">1</div>
       <div class="main-content">
         <router-view />
       </div>
-      <div class="play">
+      <div class="play" v-show="route.name != 'home-settings'">
         <Play />
       </div>
     </div>

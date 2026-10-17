@@ -9,6 +9,7 @@ import { fetch } from "@tauri-apps/plugin-http";
 import { buildAuthx } from "./authx";
 import type { ApiResponse } from "./types";
 import { useAuthStore } from "../stores/auth";
+import { isSuccessCode, resolveResCodeMessage } from "./resCode";
 
 export class ApiError extends Error {
   constructor(
@@ -98,8 +99,9 @@ export async function apiRequest<T>(
   } catch {
     throw new ApiError(resp.status, `服务器响应异常 (HTTP ${resp.status})`);
   }
-  if (json.code !== 0) {
-    throw new ApiError(json.code, json.msg || `请求失败 (code=${json.code})`);
+  if (!isSuccessCode(json.code)) {
+    // 文案解析对齐原版：错误码映射表 → 后端 msg 兜底 → "操作失败"
+    throw new ApiError(json.code, resolveResCodeMessage(json.code, json.msg));
   }
   return json.data;
 }

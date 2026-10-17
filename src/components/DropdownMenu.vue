@@ -46,6 +46,8 @@ const props = withDefaults(
      * 超出视口时自动夹紧；底部空间不足自动向上翻转。
      */
     placement?: "bottom-start" | "bottom-center" | "bottom-end";
+    /** 触发方式：click 左键开合；contextmenu 右键在光标处弹出（触发器上点击不响应） */
+    trigger?: "click" | "contextmenu";
     disabled?: boolean;
     /** 触发器撑满父容器宽度（如侧边栏用户区等通栏场景） */
     stretch?: boolean;
@@ -53,12 +55,21 @@ const props = withDefaults(
     minWidth?: number;
     zIndex?: number;
   }>(),
-  { placement: "bottom-end", disabled: false, stretch: false, minWidth: 148, zIndex: 2000 },
+  {
+    placement: "bottom-end",
+    trigger: "click",
+    disabled: false,
+    stretch: false,
+    minWidth: 148,
+    zIndex: 2000,
+  },
 );
 
 const emit = defineEmits<{
   select: [item: DropdownItem];
   visibleChange: [visible: boolean];
+  /** 弹层即将打开（右键菜单在打开前拉取数据 / 更新 items 用） */
+  beforeOpen: [];
 }>();
 
 const triggerRef = ref<HTMLElement | null>(null);
@@ -66,11 +77,14 @@ const popupRef = ref<HTMLElement | null>(null);
 
 const visible = ref(false);
 const pos = ref({ top: 0, left: 0 });
+/** contextmenu 触发时的光标坐标（非空时弹层定位于光标处） */
+const cursor = ref<{ x: number; y: number } | null>(null);
 
 const GAP = 8; // 弹层与触发器的间距
 const EDGE = 8; // 距视口边缘的最小留白
 
 const transformOrigin = computed(() => {
+  if (cursor.value) return "top left";
   switch (props.placement) {
     case "bottom-start":
       return "top left";
@@ -82,12 +96,21 @@ const transformOrigin = computed(() => {
 });
 
 async function updatePosition() {
-  const trigger = triggerRef.value;
   const popup = popupRef.value;
-  if (!trigger || !popup) return;
-  const rect = trigger.getBoundingClientRect();
+  if (!popup) return;
   const pw = popup.offsetWidth;
   const ph = popup.offsetHeight;
+  if (cursor.value) {
+    // 右键菜单：定位到光标处（夹紧视口内）
+    pos.value = {
+      top: clamp(cursor.value.y, EDGE, window.innerHeight - ph - EDGE),
+      left: clamp(cursor.value.x, EDGE, window.innerWidth - pw - EDGE),
+    };
+    return;
+  }
+  const trigger = triggerRef.value;
+  if (!trigger) return;
+  const rect = trigger.getBoundingClientRect();
   let left: number;
   switch (props.placement) {
     case "bottom-start":
@@ -107,8 +130,13 @@ async function updatePosition() {
   pos.value = { top, left };
 }
 
+function clamp(v: number, min: number, max: number): number {
+  return Math.min(Math.max(v, min), max);
+}
+
 function open() {
   if (props.disabled || visible.value) return;
+  emit("beforeOpen");
   visible.value = true;
   emit("visibleChange", true);
   void nextTick(updatePosition);
@@ -117,11 +145,20 @@ function open() {
 function close() {
   if (!visible.value) return;
   visible.value = false;
+  cursor.value = null;
   emit("visibleChange", false);
 }
 
 function toggle() {
   visible.value ? close() : open();
+}
+
+/** contextmenu 触发：记录光标位置并弹出 */
+function onContextMenu(e: MouseEvent) {
+  if (props.trigger !== "contextmenu" || props.disabled) return;
+  e.preventDefault();
+  cursor.value = { x: e.clientX, y: e.clientY };
+  open();
 }
 
 function onSelect(item: DropdownItem) {
@@ -168,10 +205,11 @@ defineExpose({ open, close, toggle });
     ref="triggerRef"
     class="fnm-dropdown"
     :class="{ 'is-disabled': disabled, 'is-stretch': stretch }"
-    role="button"
+    :role="trigger === 'contextmenu' ? undefined : 'button'"
     aria-haspopup="menu"
-    :aria-expanded="visible"
-    @click="toggle"
+    :aria-expanded="trigger === 'click' ? visible : undefined"
+    @click="trigger === 'click' && toggle()"
+    @contextmenu="onContextMenu"
   >
     <slot>
       <!-- 默认触发器：圆形 ··· 按钮（对齐原版歌单页「更多」按钮） -->

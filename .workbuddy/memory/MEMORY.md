@@ -17,4 +17,5 @@ Tauri 2 + Vue 3 重构飞牛音乐 web。
 - 本 NAS clientId=EDDLUH2WLY（GET /sys/config）
 - 全量端点/类型已入库：src/api/endpoints.ts（路由表）+ models.ts（类型）+ music.ts（16 组函数）；原版 bundle 抓取件在 /tmp/fnm-web（22 chunk，重启即失，需要时重新抓）
 - NAS 图片统一走 Rust 命令 fetch_nas_image（src-tauri/src/nas_image.rs）：后端带 Cookie: music-token 拉图返回 base64，前端 music.ts fetchCoverUrl 转 blob URL 缓存；<img> 直连 NAS 会 401（webview 无 NAS 域 cookie）
-- 浏览器预览验证：/tmp/fnm-tauri-mock.js 伪造 __TAURI_INTERNALS__.invoke（plugin:http 三段流协议末位0带数据/[1]关流 + fetch_nas_image），agent-browser close 后 open --init-script 挂载，可预置登录态
+- 浏览器预览验证：/tmp/fnm-tauri-mock.js 伪造 __TAURI_INTERNALS__.invoke（plugin:http 三段流协议末位0带数据/[1]关流 + fetch_nas_image），agent-browser close 后 open --init-script 挂载，可预置登录态（init 脚本启动时绑定，换 mock 必须 close 重开）
+- 错误码→文案是前端硬编码 Map（bundle chunk 内，zh-CN/en-US/ja-JP/de-DE 四语言，不透传后端 msg）：160001=歌单名称已存在、160002=最多99999个歌单、150001-150005=音乐库、120001=登录失效等；查找顺序 当前语言→zh-CN 兜底→后端 msg→"操作失败"；成功码 0/200
