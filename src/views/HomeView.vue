@@ -1,119 +1,195 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "../stores/auth";
-import { logout } from "../api/auth";
-import logoUrl from "../assets/logo.png";
+import { computed, ref } from "vue"
+import { useRoute, useRouter } from "vue-router"
+import { useAuthStore } from "../stores/auth"
+import { logout } from "../api/auth"
+import Aside from "../components/aside.vue"
+import logoUrl from "../assets/logo.png"
 
-const router = useRouter();
-const auth = useAuthStore();
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+const containerClass = computed(() => {
+  switch (route.name) {
+    case "home-favorites":
+      return "favorites"
+    case "home-recent":
+      return "recent"
+    case "home-genres":
+      return "genres"
+    case "home-playlists":
+      const n = Math.ceil(Math.random() * 4)
+      return `event${n}`
+    default:
+      return "primary"
+  }
+})
 
 const displayName = computed(() => {
-  const u = auth.user as Record<string, unknown> | null;
-  return (u?.name ?? u?.username ?? u?.nickname ?? "用户") as string;
-});
+  const u = auth.user as Record<string, unknown> | null
+  return (u?.name ?? u?.username ?? u?.nickname ?? "用户") as string
+})
 
 async function doLogout() {
   try {
-    await logout();
+    await logout()
   } catch {
     /* 服务端登出失败不阻塞本地清理 */
   }
-  auth.clearSession();
-  router.replace({ name: "login" });
+  auth.clearSession()
+  router.replace({ name: "login" })
 }
 </script>
 
 <template>
-  <div class="home-page">
-    <main class="panel">
-      <img class="logo" :src="logoUrl" alt="飞牛音乐" />
-      <h1>登录成功</h1>
-      <p class="welcome">欢迎，{{ displayName }}</p>
-      <ul class="meta">
-        <li><span>服务器地址</span><b>{{ auth.serverUrl }}</b></li>
-        <li><span>登录状态</span><b>已连接</b></li>
-      </ul>
-      <p class="tip">音乐库浏览、播放等功能将在后续迭代中实现。</p>
-      <button class="btn" type="button" @click="doLogout">退出登录</button>
-    </main>
+  <div class="container" :class="containerClass">
+    <Aside />
+    <div class="main">
+      <router-view />
+    </div>
+    <div class="play"></div>
   </div>
 </template>
 
 <style scoped>
-.home-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.container {
+  width: 100vw;
   height: 100vh;
-  background: var(--ds-bg-primary);
-  overflow: hidden;
-}
-.panel {
-  width: 460px;
-  max-width: calc(100vw - 48px);
-  padding: 40px 36px;
-  text-align: center;
-  border-radius: 18px;
-  background: var(--ds-bg-button-primary);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-}
-.logo {
-  width: 64px;
-  height: 64px;
-  border-radius: 14px;
-  margin-bottom: 14px;
-}
-h1 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-.welcome {
-  margin: 8px 0 22px;
-  color: var(--ds-text-secondary);
-  font-size: 14px;
-}
-.meta {
-  list-style: none;
-  margin: 0 0 20px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  text-align: left;
-  font-size: 13px;
-}
-.meta li {
   display: flex;
-  justify-content: space-between;
-  padding: 5px 0;
-}
-.meta span {
-  color: var(--ds-text-secondary);
-}
-.meta b {
-  font-weight: 500;
-  color: var(--ds-text-primary);
-  word-break: break-all;
-}
-.tip {
-  margin: 0 0 22px;
-  font-size: 12.5px;
-  color: var(--ds-text-quaternary);
-}
-.btn {
-  padding: 10px 34px;
-  border-radius: 16px;
-  border: 0;
-  background: var(--ds-bg-button-primary);
-  color: var(--ds-text-primary);
+  color: #fff;
   font-size: 14px;
-  font-weight: 500;
-  transition: background 0.2s;
-}
-.btn:hover {
-  background: var(--ds-bg-button-primary-hover);
+  transition: opacity .6s;
+
+  &.primary {
+    background: var(--bg-gradient-primary);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      background: var(--bg-gradient-overlay);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      pointer-events: none;
+    }
+  }
+
+  &.favorites {
+    background: var(--bg-gradient-likes);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      background: var(--bg-gradient-overlay);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      pointer-events: none;
+    }
+  }
+
+  &.recent {
+    background: var(--bg-gradient-recent);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      background: var(--bg-gradient-overlay);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      pointer-events: none;
+    }
+  }
+
+  &.genres {
+    background: var(--bg-gradient-primary);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      background: var(--bg-gradient-playlists), var(--bg-gradient-genres);
+      backdrop-filter: blur(58px);
+      -webkit-backdrop-filter: blur(58px);
+      opacity: 0.95;
+      transition: opacity 1.3s cubic-bezier(0.2, 0.9, 0.22, 1);
+      pointer-events: none;
+    }
+  }
+
+
+  &.event1 {
+    background: var(--bg-gradient-primary);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      background: var(--bg-gradient-playlists), var(--bg-gradient-event1);
+      backdrop-filter: blur(58px);
+      -webkit-backdrop-filter: blur(58px);
+      opacity: 0.95;
+      transition: opacity 1.3s cubic-bezier(0.2, 0.9, 0.22, 1);
+      pointer-events: none;
+    }
+  }
+
+  &.event2 {
+    background: var(--bg-gradient-primary);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      background: var(--bg-gradient-playlists), var(--bg-gradient-event2);
+      backdrop-filter: blur(58px);
+      -webkit-backdrop-filter: blur(58px);
+      opacity: 0.95;
+      transition: opacity 1.3s cubic-bezier(0.2, 0.9, 0.22, 1);
+      pointer-events: none;
+    }
+  }
+
+  &.event3 {
+    background: var(--bg-gradient-primary);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      background: var(--bg-gradient-playlists), var(--bg-gradient-event3);
+      backdrop-filter: blur(58px);
+      -webkit-backdrop-filter: blur(58px);
+      opacity: 0.95;
+      transition: opacity 1.3s cubic-bezier(0.2, 0.9, 0.22, 1);
+      pointer-events: none;
+    }
+  }
+
+  &.event4 {
+    background: var(--bg-gradient-primary);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      background: var(--bg-gradient-playlists), var(--bg-gradient-event4);
+      backdrop-filter: blur(58px);
+      -webkit-backdrop-filter: blur(58px);
+      opacity: 0.95;
+      transition: opacity 1.3s cubic-bezier(0.2, 0.9, 0.22, 1);
+      pointer-events: none;
+    }
+  }
+
 }
 </style>

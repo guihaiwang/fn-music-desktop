@@ -71,6 +71,7 @@ onMounted(async () => {
   height: 40px;
   background: transparent;
   user-select: none;
+  -webkit-user-select: none;
   display: grid;
   grid-template-columns: auto max-content;
   position: fixed;

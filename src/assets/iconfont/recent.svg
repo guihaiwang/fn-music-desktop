@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"
+    fill="currentColor"
+    class="transition-colors text-[var(--semi-color-text-1)] group-hover:text-[var(--semi-color-text-0)] size-4">
+    <g clip-path="url(#clip0_3788_861)">
+        <path
+            d="M12 1c6.075 0 11 4.925 11 11s-4.925 11-11 11S1 18.075 1 12 5.925 1 12 1zm0 2a9 9 0 100 18 9 9 0 000-18zm0 3a1 1 0 011 1v4.382l3.447 1.723a1 1 0 01-.894 1.79l-4-2A1 1 0 0111 12V7a1 1 0 011-1z"></path>
+    </g>
+    <defs>
+        <clipPath id="clip0_3788_861">
+            <rect width="24" height="24"></rect>
+        </clipPath>
+    </defs>
+</svg>

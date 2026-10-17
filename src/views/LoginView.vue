@@ -109,7 +109,7 @@ function ensureServer(): boolean {
     auth.setServer(normalized)
     return true
   } catch {
-    message.error("服务器地址无效，请检查（例如 http://192.168.1.125:5666）")
+    message.error("服务器地址无效，请检查")
     return false
   }
 }
@@ -267,9 +267,9 @@ onUnmounted(() => {
             <form class="auth-login-form auth-form-stack" @submit.prevent="submitPasswordLogin">
               <div class="auth-form-group auth-reveal">
                 <div class="auth-input-wrapper auth-input-wrapper--server">
-                  <label for="server">服务器地址</label>
-                  <input id="server" v-model="serverInput" type="text" placeholder="http://192.168.1.125:5666"
-                    spellcheck="false" autocomplete="url" @change="checkServer" />
+                  <label for="server">NAS服务器地址</label>
+                  <input id="server" v-model="serverInput" type="text" placeholder="IP地址、域名或FN ID" spellcheck="false"
+                    autocomplete="url" @change="checkServer" />
                 </div>
                 <div class="auth-input-wrapper">
                   <label for="username">用户名</label>
