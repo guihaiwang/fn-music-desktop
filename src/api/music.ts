@@ -6,7 +6,9 @@
  * - 所有响应已被 http.ts 解包（code!==0 时抛 ApiError），此处返回的即 data
  * - 请求选项：fallbackMessage 等原版参数桌面端不涉及；需要中断用 opts.timeoutMs
  */
+import { invoke } from "@tauri-apps/api/core";
 import { apiRequest } from "./http";
+import { useAuthStore } from "../stores/auth";
 import type {
   Album,
   AlbumDetail,
@@ -640,11 +642,49 @@ export const COVER_SIZE = {
 
 export type CoverSize = (typeof COVER_SIZE)[keyof typeof COVER_SIZE];
 
-/** GET /static/cover?coverId=&size= —— 实体封面（曲目/专辑/歌手/流派/歌单通用） */
+/**
+ * 拼接封面 URL（相对 API 根；原版 web 同源直挂 <img>，桌面端需配合 fetchCoverUrl 使用，
+ * 因为 NAS 域下没有 music-token cookie，<img> 直连会 401）。
+ */
 export function buildCoverUrl(coverId: string, size?: CoverSize, apiBase = "/music/api/v1"): string {
   const params = new URLSearchParams({ coverId });
   if (size !== undefined && size !== COVER_SIZE.Original) params.set("size", String(size));
   return `${apiBase}${R.static.cover}?${params.toString()}`;
+}
+
+const coverUrlCache = new Map<string, string>();
+
+/**
+ * 拉取封面为 blob URL（按 size:coverId 缓存）。
+ * 经 Rust 命令 fetch_nas_image 携带 Cookie: music-token 请求——前端 <img> 无法携带令牌
+ * （token 在 localStorage，webview 对 NAS 域无 cookie），由后端代理请求后转 base64 返回。
+ * URL 与原版 web 完全一致：登录服务器地址 + /music/api/v1/static/cover?coverId=&size=。
+ * 歌单/专辑/歌曲封面、歌手照片等所有静态封面均走此方法。
+ * 失败返回 null（调用方回退占位图标）。
+ */
+export async function fetchCoverUrl(coverId: string, size: CoverSize = COVER_SIZE.Small): Promise<string | null> {
+  const key = `${size}:${coverId}`;
+  const cached = coverUrlCache.get(key);
+  if (cached) return cached;
+  const auth = useAuthStore();
+  if (!auth.serverUrl || !auth.token) return null;
+  try {
+    const url = buildCoverUrl(coverId, size, `${auth.serverUrl}/music/api/v1`);
+    const res = await invoke<{ contentType: string; data: string }>("fetch_nas_image", {
+      url,
+      token: auth.token,
+    });
+    const bin = atob(res.data);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.contentType || "image/jpeg" });
+    if (blob.size === 0) return null;
+    const objectUrl = URL.createObjectURL(blob);
+    coverUrlCache.set(key, objectUrl);
+    return objectUrl;
+  } catch {
+    return null;
+  }
 }
 
 /** GET /track/stream?guid= —— 音频流 */

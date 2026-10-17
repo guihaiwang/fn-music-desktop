@@ -36,7 +36,16 @@
                     </svg>
                 </div>
             </div>
-            <div class="list"></div>
+            <div class="playlist-list">
+                <div class="playlist-item" v-for="pl in playlists" :key="pl.guid" :title="pl.name"
+                    @click="handlePlaylistClick(pl)">
+                    <img v-if="pl.coverId && coverUrls[pl.coverId]" class="playlist-cover" :src="coverUrls[pl.coverId]"
+                        alt="" loading="lazy" decoding="async" draggable="false" />
+                    <Transition name="aside">
+                        <span class="playlist-name" v-show="!isCollapsed">{{ pl.name }}</span>
+                    </Transition>
+                </div>
+            </div>
         </div>
         <div class="null" data-tauri-drag-region></div>
         <div class="bottom">
@@ -81,9 +90,12 @@ import AlbumsIcon from '../assets/iconfont/albums.svg?raw'
 import ArtistsIcon from '../assets/iconfont/artists.svg?raw'
 import GenresIcon from '../assets/iconfont/genres.svg?raw'
 import LibraryIcon from '../assets/iconfont/library.svg?raw'
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { logout } from '../api/auth'
+import { fetchCoverUrl, playlistApi } from '../api/music'
+import type { Playlist } from '../api/models'
+import { message } from './message/message'
 import DropdownMenu, { type DropdownItem } from './DropdownMenu.vue'
 
 const router = useRouter()
@@ -94,6 +106,48 @@ const LogoutIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
 const userItems: DropdownItem[] = [
     { key: 'logout', label: '退出登录', icon: LogoutIcon, danger: true },
 ]
+
+/* ==================== 歌单列表 ==================== */
+const playlists = ref<Playlist[]>([])
+const playlistsLoading = ref(false)
+
+async function loadPlaylists() {
+    if (playlistsLoading.value) return
+    playlistsLoading.value = true
+    try {
+        const resp = await playlistApi.list()
+        playlists.value = resp.list
+    } catch (e) {
+        message.error(e instanceof Error ? e.message : '加载歌单列表失败')
+    } finally {
+        playlistsLoading.value = false
+    }
+}
+
+function handlePlaylistClick(_pl: Playlist) {
+    // TODO: 歌单详情路由就绪后携带 guid 跳转，暂先进入歌单页
+    router.push({ name: 'home-playlists' })
+}
+
+/** 封面 blob URL 缓存：coverId → objectURL（fetchCoverUrl 内部也有缓存，此处驱动响应式更新） */
+const coverUrls = ref<Record<string, string>>({})
+
+/* 歌单就绪后按需拉取封面（无 coverId 或拉取失败时回退占位图标） */
+watch(
+    playlists,
+    (list) => {
+        for (const pl of list) {
+            const coverId = pl.coverId
+            if (!coverId || coverUrls.value[coverId]) continue
+            void fetchCoverUrl(coverId).then((url) => {
+                if (url) coverUrls.value[coverId] = url
+            })
+        }
+    },
+    { immediate: true },
+)
+
+onMounted(loadPlaylists)
 
 async function onUserSelect(item: DropdownItem) {
     if (item.key !== 'logout') return
@@ -134,6 +188,16 @@ function handleAddPlaylist() { }
 </script>
 
 <style scoped>
+/* 歌单列表滚动条（顶层规则，避免嵌套作用域编译问题） */
+.playlist-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.playlist-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 2px;
+}
+
 .aside-content {
     width: v-bind(width);
     height: 100%;
@@ -240,6 +304,9 @@ function handleAddPlaylist() { }
 
     .playlist {
         width: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
 
         .add {
             font-size: 12px;
@@ -248,8 +315,58 @@ function handleAddPlaylist() { }
             justify-content: space-between;
             gap: 4px;
         }
+    }
 
-        .list {}
+    .playlist-list {
+        width: 100%;
+        min-height: 0;
+        margin-top: 4px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .playlist-item {
+        width: 100%;
+        height: 30px;
+        flex: none;
+        padding: 0 11px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        overflow: hidden;
+        border-radius: var(--radius);
+        cursor: default;
+        user-select: none;
+        -webkit-user-select: none;
+
+        &:hover {
+            background-color: #ffffff14;
+        }
+
+        .playlist-icon {
+            display: inline-flex;
+            flex: none;
+            color: rgba(255, 255, 255, 0.62);
+        }
+
+        .playlist-cover {
+            width: 20px;
+            height: 20px;
+            flex: none;
+            border-radius: 4px;
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .playlist-name {
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     }
 
     .bottom {

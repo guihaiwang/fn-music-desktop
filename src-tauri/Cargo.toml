@@ -22,7 +22,11 @@ tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tauri-plugin-http = "2"
+# unsafe-headers：允许 JS 侧设置 Cookie 等被 fetch 规范禁止的头（飞牛音乐 API 需要 Cookie: music-token 鉴权）
+tauri-plugin-http = { version = "2", features = ["unsafe-headers"] }
+# NAS 图片代理（fetch_nas_image 命令）：后端携带 music-token 拉取封面/照片返回前端
+reqwest = { version = "0.12", default-features = false, features = ["native-tls"] }
+base64 = "0.22"
 tauri-plugin-os = "2"
 
 [target."cfg(target_os = \"windows\")".dependencies]

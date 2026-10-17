@@ -34,12 +34,13 @@ export function buildApiBase(serverUrl: string): string {
   return `${normalizeServer(serverUrl)}/music/api/v1`;
 }
 
-export async function apiRequest<T>(
+/** 组装请求 URL 与 headers（authx 签名 + Cookie 令牌），apiRequest / apiRawResponse 共用 */
+function prepareRequest(
   method: "GET" | "POST",
   path: string,
-  body?: unknown,
+  body: unknown,
   opts: RequestOptions = {},
-): Promise<T> {
+): { url: string; headers: Record<string, string> } {
   const auth = useAuthStore();
   const base = buildApiBase(auth.serverUrl);
   const url = new URL(base + path);
@@ -59,10 +60,20 @@ export async function apiRequest<T>(
   if (auth.token) {
     headers["Cookie"] = `music-token=${auth.token}`;
   }
+  return { url: url.toString(), headers };
+}
+
+export async function apiRequest<T>(
+  method: "GET" | "POST",
+  path: string,
+  body?: unknown,
+  opts: RequestOptions = {},
+): Promise<T> {
+  const { url, headers } = prepareRequest(method, path, body, opts);
 
   let resp: Response;
   try {
-    resp = await fetch(url.toString(), {
+    resp = await fetch(url, {
       method,
       headers,
       body:

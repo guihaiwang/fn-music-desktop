@@ -9,6 +9,8 @@ pub mod sso {
     pub mod sso_win;
 }
 
+pub mod nas_image;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default();
@@ -112,7 +114,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             sso::sso_win::open_sso_login,
-            sso::sso_win::close_sso_login
+            sso::sso_win::close_sso_login,
+            nas_image::fetch_nas_image
         ])
         .run(tauri::generate_context!())
         .expect("运行tauri应用失败");
